@@ -126,19 +126,54 @@ def split_dataset_files(dataset_dir: str,
     targets = [classes[uid] for uid in uids]
 
     if holdout:
+        if not np.isclose(sum(data_split), 1.0):
+            raise ValueError('data_split should sum up to 1.0')
+
         train_size, valid_size, holdout_size = data_split
-        split.test_size = train_size + valid_size
+        split.test_size = holdout_size
+        visible, hidden = next(split.split(filepaths, targets))
+
+        n_samples = int(valid_size*len(filepaths))
+        split.test_size = n_samples
+        np_targets = np.array(targets)
+        train, valid = next(split.split(
+            filepaths[visible], np_targets[visible]))
+
+        folders = [
+            (filepaths[visible][train], 'train'),
+            (filepaths[visible][valid], 'valid'),
+            (filepaths[hidden], 'holdout')]
+        files = _split_into_folders(folders, output_dir)
 
     else:
+        if not (0.0 < data_split < 1.0):
+            raise ValueError(
+                'data_split parameter should take value '
+                'from range (0.0, 1.0)')
+
         split.test_size = data_split
         train, valid = next(split.split(filepaths, targets))
-        files = defaultdict(list)
-        for index, folder_name in ((train, 'train'), (valid, 'valid')):
-            folder = output_dir.joinpath(folder_name)
-            folder.mkdir()
-            for filepath in filepaths[index]:
-                old_path = filepath.as_posix()
-                new_path = folder.joinpath(filepath.name).as_posix()
-                shutil.move(src=old_path, dst=new_path)
-                files[folder_name].append(new_path)
-        return dict(files)
+        folders = [
+            (filepaths[train], 'train'),
+            (filepaths[valid], 'valid')]
+        files = _split_into_folders(folders, output_dir)
+
+    return files
+
+
+def _split_into_folders(folders, output_dir):
+    """Moves files into separate train and validation folders."""
+
+    files = defaultdict(list)
+
+    for paths, folder_name in folders:
+        folder = output_dir.joinpath(folder_name)
+        folder.mkdir()
+
+        for filepath in paths:
+            old_path = filepath.as_posix()
+            new_path = folder.joinpath(filepath.name).as_posix()
+            shutil.move(src=old_path, dst=new_path)
+            files[folder_name].append(new_path)
+
+    return dict(files)
