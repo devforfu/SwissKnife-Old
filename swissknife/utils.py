@@ -81,8 +81,8 @@ def gather_files(src: str,
 def split_dataset_files(dataset_dir: str,
                         output_dir: str,
                         classes: dict,
-                        data_split=0.2,
-                        holdout: bool=False,
+                        valid_size=0.2,
+                        holdout_size=None,
                         rewrite: bool=False,
                         extensions: str='jpg|jpeg|png',
                         random_state: int=None):
@@ -90,25 +90,40 @@ def split_dataset_files(dataset_dir: str,
     Separates training files into training and validation folders.
 
     This function is intended to behave in a similar way like
-    `test_train_split` function from `sklearn` package, but with files.
+    `test_train_split` function from `sklearn` package, but instead of
+    returning array indexes it returns file paths.
 
     Args:
-        dataset_dir:
-        output_dir:
-        classes:
-        data_split:
-        holdout:
-        rewrite:
+        dataset_dir: Path to directory with original dataset files.
+        output_dir: Path where to save prepared catalogues with files.
+        classes: Dictionary that maps file name to class represented by
+            that file.
+        valid_size: Validation subset size (as a fraction of original dataset)
+        holdout_size: Holdout subset size (as a fraction of original dataset)
+        rewrite: If True, then previously organized files will be rewritten.
         extensions:
         random_state:
 
     Returns:
+        files: Dictionary with following keys:
+            * train - array of train files paths
+            * valid - array of validation files paths
+            * holdout (if present) - array of holdout files paths
+
+    Raises:
+        ValueError: valid_size or holdout_size argument has invalid value.
 
     """
-    if holdout and len(data_split) != 3:
+    if not (0.0 < valid_size < 1.0):
         raise ValueError(
-            'data_split tuple should have 3 items if holdout '
-            'parameter is set to True')
+            'valid_size parameter should take values from range (0.0, 1.0)')
+
+    if holdout_size is not None:
+        non_training = valid_size + holdout_size
+        if not (0.0 < non_training < 1.0):
+            raise ValueError(
+                'the sum of valid_size and holdout_size '
+                'should be in range (0.0, 1.0)')
 
     dataset_dir = Path(dataset_dir)
     output_dir = Path(output_dir)
@@ -125,11 +140,7 @@ def split_dataset_files(dataset_dir: str,
     uids = [filename.stem for filename in filepaths]
     targets = [classes[uid] for uid in uids]
 
-    if holdout:
-        if not np.isclose(sum(data_split), 1.0):
-            raise ValueError('data_split should sum up to 1.0')
-
-        train_size, valid_size, holdout_size = data_split
+    if holdout_size:
         split.test_size = holdout_size
         visible, hidden = next(split.split(filepaths, targets))
 
@@ -143,25 +154,20 @@ def split_dataset_files(dataset_dir: str,
             (filepaths[visible][train], 'train'),
             (filepaths[visible][valid], 'valid'),
             (filepaths[hidden], 'holdout')]
-        files = _split_into_folders(folders, output_dir)
+        files = _split_into_folders(folders, output_dir, rewrite)
 
     else:
-        if not (0.0 < data_split < 1.0):
-            raise ValueError(
-                'data_split parameter should take value '
-                'from range (0.0, 1.0)')
-
-        split.test_size = data_split
+        split.test_size = valid_size
         train, valid = next(split.split(filepaths, targets))
         folders = [
             (filepaths[train], 'train'),
             (filepaths[valid], 'valid')]
-        files = _split_into_folders(folders, output_dir)
+        files = _split_into_folders(folders, output_dir, rewrite)
 
     return files
 
 
-def _split_into_folders(folders, output_dir):
+def _split_into_folders(folders, output_dir, rewrite):
     """Moves files into separate train and validation folders."""
 
     files = defaultdict(list)
@@ -172,7 +178,11 @@ def _split_into_folders(folders, output_dir):
 
         for filepath in paths:
             old_path = filepath.as_posix()
-            new_path = folder.joinpath(filepath.name).as_posix()
+            new_path = folder.joinpath(filepath.name)
+            if new_path.exists() and rewrite:
+                new_path.unlink()
+
+            new_path = new_path.as_posix()
             shutil.move(src=old_path, dst=new_path)
             files[folder_name].append(new_path)
 

@@ -25,9 +25,8 @@ def test_splitting_files_from_folders_into_train_and_validation_sets(
     files = split_dataset_files(dataset_dir=folder,
                                 output_dir=str(output),
                                 classes=classes,
-                                holdout=False,
                                 extensions='mock',
-                                data_split=valid_size)
+                                valid_size=valid_size)
 
     valid, train = get_values(['valid', 'train'], files)
     assert valid is not None and train is not None
@@ -36,14 +35,15 @@ def test_splitting_files_from_folders_into_train_and_validation_sets(
     assert disjoint(valid, train)
 
 
-@pytest.mark.parametrize('data_split,counts', [
-    [[0.6, 0.20, 0.20], (60, 20, 20)],
-    [[0.5, 0.25, 0.25], (50, 25, 25)]
+@pytest.mark.parametrize('valid_size,holdout_size,counts', [
+    [0.20, 0.20, (60, 20, 20)],
+    [0.25, 0.25, (50, 25, 25)]
 ])
 def test_splitting_files_from_folders_into_train_validation_holdout_sets(
         tmpdir,
         make_dataset,
-        data_split,
+        valid_size,
+        holdout_size,
         counts):
     """Tests splitting original set of files into three non-intersected
     categories: training, validation and holdout sets.
@@ -54,9 +54,9 @@ def test_splitting_files_from_folders_into_train_validation_holdout_sets(
     files = split_dataset_files(dataset_dir=folder,
                                 output_dir=str(output),
                                 classes=classes,
-                                holdout=True,
                                 extensions='mock',
-                                data_split=data_split)
+                                valid_size=valid_size,
+                                holdout_size=holdout_size)
 
     splits = get_values(['train', 'valid', 'holdout'], files)
     assert without_nones(splits)
