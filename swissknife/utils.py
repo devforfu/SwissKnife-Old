@@ -2,6 +2,7 @@ import math
 import shutil
 import fnmatch
 from pathlib import Path
+from itertools import islice
 from collections import defaultdict
 
 import numpy as np
@@ -187,3 +188,43 @@ def _split_into_folders(folders, output_dir, rewrite):
             files[folder_name].append(new_path)
 
     return dict(files)
+
+
+class BatchGenerator:
+    """Generates batches from a single array or a list of sequences."""
+
+    def __init__(self, *arrays, batch_size=1, np_arrays=False):
+        n = np.asarray(arrays[0]).shape[0]
+
+        for arr in arrays[1:]:
+            if len(arr) != n:
+                raise ValueError('arrays are not of equal lengths')
+
+        self.zipped = len(arrays) > 1
+        self.arrays = arrays
+        self.array_size = n
+        self.batch_size = batch_size
+        self.np_arrays = np_arrays
+
+    def drain(self):
+        return list(self.flow())
+
+    def flow(self):
+        if not self.np_arrays:
+            yield from self._batches()
+        else:
+            for group in self._batches():
+                yield np.asarray(group)
+
+    def _batches(self):
+        if self.batch_size == 1:
+            yield from (list(x) for x in zip(*self.arrays))
+        else:
+            n_batches = math.ceil(self.array_size / self.batch_size)
+            array = zip(*self.arrays) if self.zipped else iter(self.arrays[0])
+            for _ in range(n_batches):
+                batches = list(islice(array, self.batch_size))
+                if self.zipped:
+                    yield [list(x) for x in zip(*batches)]
+                else:
+                    yield batches

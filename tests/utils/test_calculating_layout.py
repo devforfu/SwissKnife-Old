@@ -10,8 +10,10 @@ from swissknife.utils import calculate_layout
     (7,  None, 2,    (4, 2))
 ])
 def test_calculating_layout_with_valid_args_returns_valid_shape(
-    axes, rows, cols, expected
-):
+        axes,
+        rows,
+        cols,
+        expected):
     """
     Tests returning correct number of rows and columns.
     """
