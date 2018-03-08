@@ -1,3 +1,6 @@
+"""
+Miscellaneous tools to manage dataset files and prepare data for training.
+"""
 import math
 import shutil
 import fnmatch
@@ -92,7 +95,7 @@ def split_dataset_files(dataset_dir: str,
 
     This function is intended to behave in a similar way like
     `test_train_split` function from `sklearn` package, but instead of
-    returning array indexes it returns file paths.
+    returning array of indexes it returns file paths.
 
     Args:
         dataset_dir: Path to directory with original dataset files.
@@ -102,8 +105,10 @@ def split_dataset_files(dataset_dir: str,
         valid_size: Validation subset size (as a fraction of original dataset)
         holdout_size: Holdout subset size (as a fraction of original dataset)
         rewrite: If True, then previously organized files will be rewritten.
-        extensions:
-        random_state:
+            Otherwise, the file will be ignored.
+        extensions: File extensions considered when gathering files.
+        random_state: Random state for sklearn.StratifiedShuffleSplit object
+            which is used to split files into train/validation/test subsets.
 
     Returns:
         files: Dictionary with following keys:
@@ -177,17 +182,85 @@ def _split_into_folders(folders, output_dir, rewrite):
         folder = output_dir.joinpath(folder_name)
         folder.mkdir()
 
-        for filepath in paths:
-            old_path = filepath.as_posix()
-            new_path = folder.joinpath(filepath.name)
-            if new_path.exists() and rewrite:
-                new_path.unlink()
-
-            new_path = new_path.as_posix()
-            shutil.move(src=old_path, dst=new_path)
-            files[folder_name].append(new_path)
+        for old_path in paths:
+            new_path = folder.joinpath(old_path.name)
+            if not new_path.exists() or rewrite:
+                if new_path.exists():
+                    new_path.unlink()
+                shutil.move(src=old_path.as_posix(), dst=new_path.as_posix())
+            files[folder_name].append(new_path.as_posix())
 
     return dict(files)
+
+
+def split_into_class_folders(dataset_dir: str,
+                             output_dir: str,
+                             classes: dict,
+                             rewrite: bool=False):
+    """
+    Splits dataset files from folder into set of subfolders where each
+    subfolder contains a single class of images.
+
+    Consider that original dataset has the following organization of files:
+
+        /path/to/dataset
+            - cat1512.jpeg
+            - dog5131.jpeg
+            - snake8067.jpeg
+            - cat900.jpeg
+            ...
+
+    Then, after function is invoked, a new tree structure will be created:
+
+        /path/to/output/dir
+            /cat
+                - cat1512.jpeg
+                - cat900.jpeg
+                ...
+            /dog
+                - dog5131.jpeg
+                ...
+            /snake
+                - snake8067.jpeg
+                ...
+
+    Args:
+        dataset_dir: Folder with original files.
+        output_dir: New folder with files sorted into class subfolders.
+        classes: Dictionary that maps file name to class represented by
+            that file.
+        rewrite: If True, then previously organized files will be rewritten.
+            Otherwise, an exception is raised if any of files exists.
+
+    """
+    dataset_dir = Path(dataset_dir)
+    output_dir = Path(output_dir)
+
+    if not output_dir.exists():
+        output_dir.mkdir()
+
+    unique_classes = set(classes.values())
+    class_folders = {}
+    for class_name in unique_classes:
+        folder = output_dir.joinpath(class_name)
+        folder.mkdir()
+        class_folders[class_name] = folder.as_posix()
+
+    classified_files = defaultdict(list)
+    for old_path in dataset_dir.glob('*.*'):
+        filename = old_path.stem
+        if filename not in classes:
+            raise ValueError('there is no class for filename %s' % old_path)
+        class_name = classes[filename]
+        folder = class_folders[class_name]
+        new_path = Path(folder).joinpath(old_path.name)
+        if not new_path.exists() or rewrite:
+            if new_path.exists():
+                new_path.unlink()
+            shutil.move(src=old_path.as_posix(), dst=new_path.as_posix())
+        classified_files[class_name].append(new_path.as_posix())
+
+    return class_folders, dict(classified_files)
 
 
 class BatchGenerator:
