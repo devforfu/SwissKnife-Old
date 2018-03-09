@@ -7,23 +7,47 @@ from swissknife.tests import random_string, n_files
 from swissknife.utils import split_into_class_folders
 
 
-def test_splitting_files_from_folder_into_class_based_subfolders(
+def test_copying_files_from_single_folder_into_class_based_subfolders(
         tmpdir,
         make_dataset):
-    """Tests copying files from folder into new directory tree where each
-    subfolder contains images of a single class.
+    """Tests copying files from single folder into new directory tree where
+    each subfolder contains files of a single class.
     """
-    output = tmpdir.mkdir('output')
+    output_dir = str(tmpdir.mkdir('output'))
     n_files_per_class, n_classes = 10, 3
-    folder, classes = make_dataset(n_files_per_class)
+    dataset_dir, classes = make_dataset(n_files_per_class)
 
-    dirs = split_into_class_folders(dataset_dir=folder,
-                                    output_dir=str(output),
-                                    classes=classes)
+    dirs = split_into_class_folders(dataset_dir=dataset_dir,
+                                    output_dir=output_dir,
+                                    classes=classes,
+                                    copy=True)
     folders = list(dirs.values())
 
     assert len(dirs) == n_classes
     assert all(n_files(folder) == n_files_per_class for folder in folders)
+    assert n_files(dataset_dir) == n_classes * n_files_per_class
+
+
+def test_moving_files_from_single_folder_into_class_based_subfolders(
+        tmpdir,
+        make_dataset):
+    """Tests moving original files from single folder into new directory tree
+    where each subfolder contains files of a single class. In this case,
+    original files are not kept intact.
+    """
+    output_dir = str(tmpdir.mkdir('output'))
+    n_files_per_class, n_classes = 10, 3
+    dataset_dir, classes = make_dataset(n_files_per_class)
+
+    dirs = split_into_class_folders(dataset_dir=dataset_dir,
+                                    output_dir=output_dir,
+                                    classes=classes,
+                                    copy=False)
+    folders = list(dirs.values())
+
+    assert len(dirs) == n_classes
+    assert all(n_files(folder) == n_files_per_class for folder in folders)
+    assert n_files(dataset_dir) == 0
 
 
 @pytest.fixture
