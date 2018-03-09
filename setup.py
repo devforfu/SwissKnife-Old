@@ -7,7 +7,7 @@ def version():
     for line in open('swissknife/__init__.py'):
         match = re.match("__version__ *= *'(.*)'", line)
         if match:
-            return match.groups()
+            return match.groups()[0]
     raise RuntimeError('__version__ is not found')
 
 
@@ -46,7 +46,7 @@ tests_require = [
 setup(
     name='swissknife',
     maintainer='devforfu',
-    version='',
+    version=version(),
     description='A set of useful utilities to perform Machine Learning tasks',
     long_description=long_description(),
     packages=find_packages(),
