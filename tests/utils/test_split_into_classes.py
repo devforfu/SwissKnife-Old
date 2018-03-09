@@ -17,14 +17,13 @@ def test_splitting_files_from_folder_into_class_based_subfolders(
     n_files_per_class, n_classes = 10, 3
     folder, classes = make_dataset(n_files_per_class)
 
-    dirs, files = split_into_class_folders(dataset_dir=folder,
-                                           output_dir=str(output),
-                                           classes=classes)
+    dirs = split_into_class_folders(dataset_dir=folder,
+                                    output_dir=str(output),
+                                    classes=classes)
+    folders = list(dirs.values())
 
     assert len(dirs) == n_classes
-    assert len(files) == n_classes
-    assert all_folders_have_n_files(dirs.values(), n_files_per_class)
-    assert all_lists_have_length(files.values(), n_files_per_class)
+    assert all(n_files(folder) == n_files_per_class for folder in folders)
 
 
 @pytest.fixture
@@ -42,14 +41,6 @@ def make_dataset(tmpdir):
         return str(root), dict(zip(x, y))
 
     return files_maker
-
-
-def all_folders_have_n_files(folders, n):
-    return all(n_files(folder) == n for folder in folders)
-
-
-def all_lists_have_length(list_of_lists, length):
-    return all(len(ls) == length for ls in list_of_lists)
 
 
 def _make_files(size, prefix, ext='mock'):

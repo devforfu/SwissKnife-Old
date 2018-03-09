@@ -196,6 +196,7 @@ def _split_into_folders(folders, output_dir, rewrite):
 def split_into_class_folders(dataset_dir: str,
                              output_dir: str,
                              classes: dict,
+                             copy: bool=True,
                              rewrite: bool=False):
     """
     Splits dataset files from folder into set of subfolders where each
@@ -229,8 +230,15 @@ def split_into_class_folders(dataset_dir: str,
         output_dir: New folder with files sorted into class subfolders.
         classes: Dictionary that maps file name to class represented by
             that file.
+        copy: If True, then original files will be copied into new folder
+            instead of being moved to keep original files intact.
         rewrite: If True, then previously organized files will be rewritten.
             Otherwise, an exception is raised if any of files exists.
+
+    Returns:
+        class_folders: Dictionary with (class_name, folder_path) key-value
+            pairs keeping absolute paths to folders with images belonging to
+            specific classes.
 
     """
     dataset_dir = Path(dataset_dir)
@@ -246,7 +254,6 @@ def split_into_class_folders(dataset_dir: str,
         folder.mkdir()
         class_folders[class_name] = folder.as_posix()
 
-    classified_files = defaultdict(list)
     for old_path in dataset_dir.glob('*.*'):
         filename = old_path.stem
         if filename not in classes:
@@ -257,10 +264,10 @@ def split_into_class_folders(dataset_dir: str,
         if not new_path.exists() or rewrite:
             if new_path.exists():
                 new_path.unlink()
-            shutil.move(src=old_path.as_posix(), dst=new_path.as_posix())
-        classified_files[class_name].append(new_path.as_posix())
+            process_file = shutil.copy if copy else shutil.move
+            process_file(src=old_path.as_posix(), dst=new_path.as_posix())
 
-    return class_folders, dict(classified_files)
+    return class_folders
 
 
 class BatchGenerator:

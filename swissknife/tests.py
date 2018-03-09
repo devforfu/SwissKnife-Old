@@ -1,7 +1,6 @@
 import random
-from os import listdir
+from pathlib import Path
 from itertools import combinations
-from os.path import isfile, isdir, splitext
 
 
 def random_string(size: int, domain: str='abcdef1234567890') -> str:
@@ -41,13 +40,13 @@ def without_nones(seq):
     return all([item is not None for item in seq])
 
 
-def has_extension(filename, exts):
+def has_extension(filename, exts=None):
     """Checks if file has extension from list. If extensions list is empty,
     then function returns True as default value.
     """
     if exts is None or not exts:
         return True
-    _, file_ext = splitext(filename)
+    file_ext = Path(filename).suffix
     for ext in exts.split('|'):
         if file_ext == ext:
             return True
@@ -58,8 +57,11 @@ def n_files(folder: str, exts=None):
     """Returns number of direct children in folder which themselves are not
     folders."""
 
-    return sum([
-        1 for filename in listdir(folder)
-        if has_extension(filename, exts) and
-        not isdir(filename) and
-        isfile(filename)])
+    counter = 0
+    for filename in Path(folder).glob('*.*'):
+        if filename.is_dir():
+            continue
+        if has_extension(filename, exts):
+            counter += 1
+
+    return counter
