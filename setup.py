@@ -37,7 +37,8 @@ class PyTest(TestCommand):
 
 install_requires = [
     'numpy',
-    'scikit-learn'
+    'scikit-learn',
+    'matplotlib'
 ]
 
 tests_require = [

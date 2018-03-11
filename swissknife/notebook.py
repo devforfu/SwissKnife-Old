@@ -4,8 +4,8 @@ A group of snippets helpful while working with Jupyter Notebooks.
 
 
 def format_list(seq):
-    """Converts list-like objects into comma separated string representation."""
-
+    """Converts list-like objects into comma separated string representation.
+    """
     if hasattr(seq, 'tolist'):
         seq = seq.tolist()
     elif hasattr(seq, '__len__'):
@@ -28,7 +28,7 @@ def pandas_show_all():
     try:
         import pandas
     except ImportError:
-        print('This utility cannot be used without pandas library installed')
+        print('This utility cannot be used without \'pandas\' installed')
         return None
     else:
         ctx = pandas.option_context(
@@ -43,7 +43,7 @@ def hprint(msg, color='black', tag='p', **message_kwargs):
     try:
         from IPython.display import display, HTML
     except ImportError:
-        print('This utility cannot be used without pandas library installed')
+        print('This utility cannot be used without \'IPython\' installed')
         return None
     tag_text = msg.format(**message_kwargs)
     template = '<{0} style="color: {1}">{2}</{0}>'
