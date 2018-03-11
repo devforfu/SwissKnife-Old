@@ -36,7 +36,8 @@ class PyTest(TestCommand):
 
 
 install_requires = [
-    ''
+    'numpy',
+    'scikit-learn'
 ]
 
 tests_require = [
