@@ -1,6 +1,8 @@
 """
 A group of snippets helpful while working with Jupyter Notebooks.
 """
+import sys
+from pathlib import Path
 
 
 def format_list(seq):
@@ -49,3 +51,46 @@ def hprint(msg, color='black', tag='p', **message_kwargs):
     template = '<{0} style="color: {1}">{2}</{0}>'
     tag = template.format(tag, color, tag_text)
     display(HTML(tag))
+
+
+class SysPath:
+    """A singleton class with group of static that help modify interpreter
+    search path. Useful when need to include additional modules and scripts
+    which are not in working directory or among installed packages.
+    """
+
+    _instance = None
+
+    def __new__(cls):
+        if SysPath._instance is None:
+            SysPath._instance = object.__new__(cls)
+        return SysPath._instance
+
+    def __init__(self):
+        self.original_sys_path = None
+
+    def extend(self, paths):
+        """Adds additional folders into Python interpreter search paths list.
+
+        Note that this function should be called only ones per script execution
+        or notebook kernel running or only after restore() method is called.
+        """
+        if self.original_sys_path is not None:
+            return sys.path
+
+        self.original_sys_path = sys.path.copy()
+        extension = [Path(p).expanduser().as_posix()
+                     for p in paths
+                     if p not in sys.path]
+        new_sys_path = extension + sys.path
+        sys.path = new_sys_path
+        return new_sys_path
+
+    def restore(self):
+        """Restores original search path list if extend() method was called
+        previously. Otherwise, the call does nothing.
+        """
+        if self.original_sys_path is not None:
+            sys.path = self.original_sys_path
+        self.original_sys_path = None
+        return sys.path
