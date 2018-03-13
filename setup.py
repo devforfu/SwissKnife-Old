@@ -54,5 +54,7 @@ setup(
     packages=find_packages(),
     install_requires=install_requires,
     tests_require=tests_require,
+    package_data={'': ['configs/*.yaml']},
+    include_package_data=True,
     keywords=['machine-learning', 'scikit', 'sklearn'],
     cmdclass={'test': PyTest})
