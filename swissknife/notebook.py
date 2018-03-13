@@ -1,8 +1,8 @@
 """
 A group of snippets helpful while working with Jupyter Notebooks.
 """
+import os
 import sys
-from pathlib import Path
 
 
 def format_list(seq):
@@ -79,7 +79,7 @@ class SysPath:
             return sys.path
 
         self.original_sys_path = sys.path.copy()
-        extension = [Path(p).expanduser().as_posix()
+        extension = [os.path.expanduser(p)
                      for p in paths
                      if p not in sys.path]
         new_sys_path = extension + sys.path
