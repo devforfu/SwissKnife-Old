@@ -1,5 +1,6 @@
-__version__ = '0.1.0'
+__version__ = '0.2.0'
 
-from .files import FilesStream
-from .transform import GeneratorPipeline
-from .config import console_logger, notebook_logger, main_logger
+from .files import FilesStream  # NOQA
+from .transform import GeneratorPipeline  # NOQA
+from .config import console_logger, notebook_logger, main_logger  # NOQA
+from .images import FallbackImageLoader, compute_featurewise_mean_and_std  # NOQA
