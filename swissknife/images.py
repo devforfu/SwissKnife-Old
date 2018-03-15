@@ -54,9 +54,14 @@ class FallbackImageLoader:
     if no any images reading libraries installed.
 
     This implementation is intentionally kept more simple then original one.
-    """
 
-    def __init__(self, channels_first=True, dtype=float):
+    Args:
+        channels_first: If True, then channels dimension will go first,
+            otherwise - last.
+        dtype: Numpy image array type.
+
+    """
+    def __init__(self, channels_first=False, dtype=float):
         self.dtype = dtype
         self.channels_first = channels_first
         self.pil_image = None
