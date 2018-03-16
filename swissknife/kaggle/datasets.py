@@ -70,8 +70,8 @@ class KaggleClassifiedImagesSource:
         classes = self.read_labels(labels_path, label_column=label_column)
         self.build(classes)
 
-    def __call__(self, folder: str, target_size: tuple, batch_size: int=32):
-        return self.flow(folder, target_size, batch_size)
+    def __call__(self, *args, **kwargs):
+        return self.flow(*args, **kwargs)
 
     @property
     def n_classes(self) -> int:
@@ -179,6 +179,49 @@ class KaggleClassifiedImagesSource:
         return TrainingSamplesIterator(self, folder, target_size, batch_size, infinite)
 
 
+class KaggleTestImagesSource:
+    """Class that helps generate test (un-labelled) samples from images data
+    provided in Kaggle-specific format.
+
+    The class is similar to KaggleClassifiedImagesSource, but instead loads
+    test or unsupervised files. It keeps file names to simplify generation of
+    Kaggle submission file.
+    """
+    def __init__(self,
+                 test_folder: str,
+                 target_size: tuple,
+                 batch_size: int=32,
+                 load_image=None):
+
+        if load_image is None:
+            load_image = FallbackImageLoader()
+
+        self.test_folder = test_folder
+        self.target_size = target_size
+        self.batch_size = batch_size
+        self.identifiers = None
+        self.load_image = load_image
+        stream = FilesStream(
+            self.test_folder, batch_size=self.batch_size)
+        self._iterator = stream(infinite=False, same_size_batches=False)
+
+    def __call__(self):
+        return self.flow()
+
+    @property
+    def steps_per_epoch(self):
+        return self._iterator.steps_per_epoch
+
+    def flow(self):
+        self.identifiers = []
+        for batch in self._iterator:
+            uids = [path.stem for path in batch]
+            images = [self.load_image(path, target_size=self.target_size)
+                      for path in batch]
+            self.identifiers.extend(uids)
+            yield images, uids
+
+
 class TrainingSamplesIterator:
     """Supplementary class iterating through training samples."""
 
@@ -189,7 +232,7 @@ class TrainingSamplesIterator:
         self.batch_size = batch_size
         self.infinite = infinite
         stream = FilesStream(self.folder, batch_size=self.batch_size)
-        self._source = stream(infinite=infinite, same_size_batches=True)
+        self._source = stream(infinite=infinite, same_size_batches=infinite)
 
     @property
     def steps_per_epoch(self):
@@ -209,3 +252,44 @@ class TrainingSamplesIterator:
             for path in paths])
         targets = np.asarray([delegate.get_class_name(path) for path in paths])
         return arrays, targets
+
+
+class TestSamplesIterator:
+
+    def __self__(self,
+                 test_folder: str,
+                 target_size: tuple,
+                 batch_size: int=32,
+                 with_identifiers: bool=False,
+                 load_image=None):
+
+        if load_image is None:
+            load_image = FallbackImageLoader()
+
+        self.test_folder = test_folder
+        self.target_size = target_size
+        self.batch_size = batch_size
+        self.with_identifiers = with_identifiers
+        self.identifiers = []
+        self.load_image = load_image
+        stream = FilesStream(
+            self.test_folder, batch_size=self.batch_size)
+        self._iterator = stream(infinite=False, same_size_batches=False)
+
+    @property
+    def n_batches(self):
+        return self._iterator.n_batches
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        return self.next()
+
+    def next(self):
+        batch = next(self._iterator)
+        uids = [Path(filename).stem for filename in batch]
+        images = [self.load_image(path, self.target_size) for path in batch]
+        self.identifiers.extend(uids)
+        result = (images, uids) if self.with_identifiers else images
+        return result
