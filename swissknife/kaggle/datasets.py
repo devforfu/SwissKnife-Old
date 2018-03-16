@@ -63,12 +63,12 @@ class KaggleClassifiedImagesSource:
 
         self.labels_path = labels_path
         self.label_column = label_column
+        self.load_image = load_image
         self.binarizer = None
         self.name_to_label = None
         self.identifier_to_label = None
         classes = self.read_labels(labels_path, label_column=label_column)
         self.build(classes)
-        self._load_image = load_image
 
     def __call__(self, folder: str, target_size: tuple, batch_size: int=32):
         return self.flow(folder, target_size, batch_size)
@@ -161,21 +161,51 @@ class KaggleClassifiedImagesSource:
         """
         return self.binarizer.classes_[label]
 
-    def flow(self, folder: str, target_size: tuple, batch_size: int):
-        """Creates a generator that infinitely iterates through directory with
-        files and reads images from folder in batches, converting them
-        into (x, y) pairs for model's training.
+    def flow(self, folder: str, target_size: tuple, batch_size: int, infinite: bool=False):
+        """Creates a generator that iterates through directory with files and reads images
+        from folder in batches, converting them into (x, y) pairs for model's training.
 
         Args:
             folder: Directory with labelled files.
             target_size: Shape of generated image samples.
             batch_size: Size of batch.
+            infinite: If True, then created generator will infinitely iterate through
+                available files. Otherwise, it will stop as soon as all samples visited.
+
+        Returns:
+            TrainingSamplesIterator: Generator-like object yielding training pairs in batches.
 
         """
-        stream = FilesStream(folder, batch_size=batch_size)
-        for paths in stream(infinite=True, same_size_batches=True):
-            arrays = np.asarray([
-                self._load_image(path, target_size=target_size)
-                for path in paths])
-            targets = np.asarray([self.get_class_name(path) for path in paths])
-            yield arrays, targets
+        return TrainingSamplesIterator(self, folder, target_size, batch_size, infinite)
+
+
+class TrainingSamplesIterator:
+    """Supplementary class iterating through training samples."""
+
+    def __init__(self, delegate, folder, target_size, batch_size, infinite=False):
+        self.delegate = delegate
+        self.folder = folder
+        self.target_size = target_size
+        self.batch_size = batch_size
+        self.infinite = infinite
+        stream = FilesStream(self.folder, batch_size=self.batch_size)
+        self._source = stream(infinite=infinite, same_size_batches=True)
+
+    @property
+    def steps_per_epoch(self):
+        return self._source.n_batches
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        return self.next()
+
+    def next(self):
+        delegate = self.delegate
+        paths = next(self._source)
+        arrays = np.asarray([
+            delegate.load_image(path, target_size=self.target_size)
+            for path in paths])
+        targets = np.asarray([delegate.get_class_name(path) for path in paths])
+        return arrays, targets
