@@ -256,7 +256,7 @@ class TrainingSamplesIterator:
 
 class TestSamplesIterator:
 
-    def __self__(self,
+    def __init__(self,
                  test_folder: str,
                  target_size: tuple,
                  batch_size: int=32,
