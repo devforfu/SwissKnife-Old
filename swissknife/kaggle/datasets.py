@@ -255,7 +255,12 @@ class TrainingSamplesIterator:
 
 
 class TestSamplesIterator:
+    """Supplementary class iterating through test data samples.
 
+    The main difference with `TrainingSamplesIterator` is that this class keeps
+    references to files identifiers which helps to generate submission file
+    in format expected by Kaggle.
+    """
     def __init__(self,
                  test_folder: str,
                  target_size: tuple,
