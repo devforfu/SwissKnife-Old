@@ -108,7 +108,7 @@ class BatchArrayIterator:
         return batch
 
 
-class ModelSaver:
+class SavingFolder:
     """Tool preparing filesystem to save model and restoring trained model and
     training process history (if available).
 
@@ -285,3 +285,12 @@ class ModelSaver:
                 history.append(record)
 
         return history
+
+    @property
+    def model_files(self, abspath=False):
+        """Returns a list of files in model folder."""
+
+        filenames = os.listdir(self.model_dir)
+        if not abspath:
+            return filenames
+        return [os.path.join(self.model_dir, name) for name in filenames]
