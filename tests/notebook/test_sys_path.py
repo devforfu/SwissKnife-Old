@@ -10,7 +10,7 @@ def test_adding_new_search_path_onto_sys_path(monkeypatch):
     extension = ['/new/path', '/another/one']
     sys_path = SysPath()
 
-    sys_path.extend(extension)
+    sys_path.extend(*extension)
 
     assert sys.path == extension
 
@@ -23,7 +23,7 @@ def test_restoring_search_path_to_original_state(monkeypatch):
     original = ['/path/to/module', '/path/to/another/module']
     monkeypatch.setattr('sys.path', original)
     sys_path = SysPath()
-    sys_path.extend(['/new/path'])
+    sys_path.extend('/new/path')
 
     sys_path.restore()
 

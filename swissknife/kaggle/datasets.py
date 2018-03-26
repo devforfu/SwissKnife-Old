@@ -21,14 +21,14 @@ class KaggleClassifiedImagesSource:
 
     For example, consider the following folder with images:
 
-        \dataset
-            \train
+        /dataset
+            /train
               - 08ab870.jpeg
               - 73c913f.jpeg
               - fe10512.jpeg
               ...
               - cca89cf.jpeg
-            \test
+            /test
               ...
 
     Then, file with labels should have the following structure:
@@ -161,28 +161,35 @@ class KaggleClassifiedImagesSource:
         """
         return self.binarizer.classes_[label]
 
-    def flow(self, folder: str, target_size: tuple, batch_size: int, infinite: bool=False):
-        """Creates a generator that iterates through directory with files and reads images
-        from folder in batches, converting them into (x, y) pairs for model's training.
+    def flow(self, folder: str, target_size: tuple, batch_size: int,
+             infinite: bool=False):
+        """Creates a generator that iterates through directory with files and
+        reads images from folder in batches, converting them into (x, y) pairs
+        for model's training.
 
         Args:
             folder: Directory with labelled files.
             target_size: Shape of generated image samples.
             batch_size: Size of batch.
-            infinite: If True, then created generator will infinitely iterate through
-                available files. Otherwise, it will stop as soon as all samples visited.
+            infinite: If True, then created generator will infinitely iterate
+                through available files. Otherwise, it will stop as soon as all
+                samples visited.
 
         Returns:
-            TrainingSamplesIterator: Generator-like object yielding training pairs in batches.
+            TrainingSamplesIterator: Generator-like object yielding training
+                pairs in batches.
 
         """
-        return TrainingSamplesIterator(self, folder, target_size, batch_size, infinite)
+        return TrainingSamplesIterator(
+            self, folder, target_size, batch_size, infinite)
 
 
 class TrainingSamplesIterator:
     """Supplementary class iterating through training samples."""
 
-    def __init__(self, delegate, folder, target_size, batch_size, infinite=False):
+    def __init__(self, delegate, folder, target_size, batch_size,
+                 infinite=False):
+
         self.delegate = delegate
         self.folder = folder
         self.target_size = target_size

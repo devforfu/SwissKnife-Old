@@ -66,7 +66,7 @@ def get_logger(name='main',
         import yaml
     except ImportError:
         raise ValueError(
-            'cannot initialize logger with YAML config: '
+            'cannot initialize logger with YAML config - '
             'yaml package is not installed')
     else:
         with open(config_file) as fp:
