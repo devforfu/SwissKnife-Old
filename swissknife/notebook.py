@@ -69,7 +69,7 @@ class SysPath:
     def __init__(self):
         self.original_sys_path = None
 
-    def extend(self, paths):
+    def extend(self, path, *paths):
         """Adds additional folders into Python interpreter search paths list.
 
         Note that this function should be called only ones per script execution
@@ -78,11 +78,11 @@ class SysPath:
         if self.original_sys_path is not None:
             return sys.path
 
+        paths = [path] + list(paths)
         self.original_sys_path = sys.path.copy()
-        extension = [os.path.expanduser(p)
-                     for p in paths
-                     if p not in sys.path]
-        new_sys_path = extension + sys.path
+        expanded = [os.path.expanduser(p) for p in paths]
+        unique = [p for p in expanded if p not in sys.path]
+        new_sys_path = unique + sys.path
         sys.path = new_sys_path
         return new_sys_path
 
@@ -94,3 +94,22 @@ class SysPath:
             sys.path = self.original_sys_path
         self.original_sys_path = None
         return sys.path
+
+    @staticmethod
+    def print_paths(paths):
+        """Prints a list of provided search paths in pretty format."""
+        n_digits = len(str(len(paths)))
+        template = '[{:%d}] {}' % n_digits
+        print('Search paths:')
+        for index, path in enumerate(sorted(paths), 1):
+            string = template.format(index, path or 'working dir')
+            print(string)
+
+
+def extend_search_path(path, *paths):
+    """Convenience wrapper for SysPath singleton extending interpreter's search
+    path list
+    """
+    syspath = SysPath()
+    updated = syspath.extend(path, *paths)
+    syspath.print_paths(updated)
