@@ -1,4 +1,5 @@
 import random
+from io import StringIO
 from pathlib import Path
 from itertools import combinations
 
@@ -65,3 +66,30 @@ def n_files(folder: str, exts=None):
             counter += 1
 
     return counter
+
+
+class StringBuffer:
+
+    def __init__(self):
+        self.buffer = StringIO()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.buffer.seek(0)
+
+    def __getattr__(self, item):
+        delegate = self.__dict__['buffer']
+        if item not in self.__dict__:
+            if item in dir(delegate):
+                return getattr(delegate, item)
+        raise AttributeError(item)
+
+    @property
+    def captured(self):
+        return self.buffer.getvalue()
+
+    @property
+    def lines(self):
+        return self.captured.split()
