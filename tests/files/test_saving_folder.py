@@ -1,4 +1,4 @@
-from swissknife.files import ModelSaver
+from swissknife.files import SavingFolder
 
 
 def test_model_saving_paths_relative_to_root_folder(tmpdir):
@@ -6,7 +6,7 @@ def test_model_saving_paths_relative_to_root_folder(tmpdir):
     model = root.join('model').join('model.h5')
     history = root.join('model').join('model.csv')
 
-    saver = ModelSaver('model', models_root=str(root))
+    saver = SavingFolder('model', models_root=str(root))
 
     assert saver.model_name == 'model'
     assert saver.models_root == str(root)
