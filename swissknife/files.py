@@ -119,14 +119,17 @@ class SavingFolder:
     Attributes:
         models_root: Directory with models's subfolders.
         model_name: Model's subfolder name.
-        model_path: Absolute path to saved model's file
+        model_path: Absolute path to saved model's file.
+        model_ext: Extension for model saving file.
         history_path: Absolute path to saved model's training history.
+        history_ext: Extension for history file.
         env_var: Environment variable with path to directory with models.
         log: Logger instance.
 
     """
     def __init__(self, model_name: str, models_root: str=None,
-                 env_var='MODELS_DIR', log=None):
+                 env_var='MODELS_DIR', model_ext='.h5', history_ext='.csv',
+                 log=None):
 
         if models_root is None:
             env_value = os.environ.get(env_var, '')
@@ -135,8 +138,8 @@ class SavingFolder:
         self.models_root = models_root
         self.model_name = model_name
         self.model_dir = join(self.models_root, self.model_name)
-        self.model_path = join(self.model_dir, self.model_name + '.h5')
-        self.history_path = join(self.model_dir, self.model_name + '.csv')
+        self.model_path = join(self.model_dir, self.model_name + model_ext)
+        self.history_path = join(self.model_dir, self.model_name + history_ext)
         self.log = log or logging.getLogger()
 
     def create_model_dir(self, ask_on_rewrite: bool=True) -> bool:
