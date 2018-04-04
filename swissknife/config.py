@@ -2,6 +2,7 @@
 A set of utilities helpful to configure package or script before running.
 """
 import os
+import json
 import string
 import logging
 import logging.config
@@ -9,7 +10,7 @@ from io import StringIO
 from os.path import dirname, join
 
 
-DEFAULT_LOGGER = join(dirname(__file__), 'configs', 'logger.yaml')
+DEFAULT_LOGGER = join(dirname(__file__), 'configs', 'logger.json')
 
 
 def debug_logger(output_file=None):
@@ -62,23 +63,45 @@ def get_logger(name='main',
         log: An instantiated logger object.
 
     """
-    try:
-        import yaml
-    except ImportError:
-        raise ValueError(
-            'cannot initialize logger with YAML config - '
-            'yaml package is not installed')
-    else:
-        with open(config_file) as fp:
-            content = fp.read()
+    def interpolate_template(content):
+        template = string.Template(content)
+        try:
+            config_string = template.substitute(
+                logfile=output_file,
+                file_level=file_level.upper(),
+                console_level=console_level.upper())
 
-    template = string.Template(content)
-    config_string = template.substitute(
-        logfile=output_file,
-        file_level=file_level.upper(),
-        console_level=console_level.upper())
-    config = yaml.load(StringIO(config_string))
-    logging.config.dictConfig(config)
+        except (ValueError, TypeError):
+            # leave as is
+            return content
+        else:
+            return config_string
+
+
+    def parse_yaml(string):
+        """Parse YAML configuration from string."""
+
+        try:
+            import yaml
+        except ImportError:
+            raise ValueError(
+                'cannot initialize logger with YAML config - '
+                'yaml package is not installed')
+        else:
+            return yaml.load(StringIO(string))
+
+
+    with open(config_file) as fp:
+        raw_content = fp.read()
+    interpolated = interpolate_template(raw_content)
+    if config_file.endswith('.yaml'):
+        config_dict = parse_yaml(interpolated)
+    elif config_file.endswith('.json'):
+        config_dict = json.loads(interpolated)
+    else:
+        raise ValueError('unsupported configuration')
+
+    logging.config.dictConfig(config_dict)
     logger = logging.getLogger(name)
     return logger
 
