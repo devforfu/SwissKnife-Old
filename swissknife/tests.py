@@ -1,7 +1,11 @@
+import time
 import random
 from io import StringIO
 from pathlib import Path
+from timeit import default_timer
 from itertools import combinations
+
+import numpy as np
 
 
 def random_string(size: int, domain: str='abcdef1234567890') -> str:
@@ -69,6 +73,9 @@ def n_files(folder: str, exts=None):
 
 
 class StringBuffer:
+    """Context manager helping to redirect output into string buffer and
+    get captured values.
+    """
 
     def __init__(self):
         self.buffer = StringIO()
@@ -93,3 +100,58 @@ class StringBuffer:
     @property
     def lines(self):
         return self.captured.split()
+
+
+class Timer:
+    """Simple util to measure execution time.
+
+    Examples
+    --------
+    >>> import time
+    >>> with Timer() as timer:
+    ...     time.sleep(1)
+    >>> print(timer)
+    00:00:01
+    """
+    def __init__(self):
+        self.start = None
+        self.elapsed = None
+
+    def __enter__(self):
+        self.start = default_timer()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.elapsed = default_timer() - self.start
+
+    def __str__(self):
+        return self.verbose()
+
+    def verbose(self):
+        if self.elapsed is None:
+            return '<not-measured>'
+        return time.strftime('%H:%M:%S', time.gmtime(self.elapsed))
+
+
+class MockImage:
+
+    def __init__(self, grey=True, width=100, height=100, rate=0.5):
+        self.grey = grey
+        self.width = width
+        self.height = height
+        self.rate = rate
+
+    def random_pixel(self, p):
+        if np.random.binomial(1, p):
+            return 1 if self.grey else [1., 1., 1.]
+        if self.grey:
+            return 0
+        else:
+            return [random.random() for _ in range(3)]
+
+    def salt(self):
+        width, height = self.width, self.height
+        pixels = np.array([
+            self.random_pixel(self.rate) for _ in range(width * height)])
+        img = pixels.reshape((width, height))
+        return img
