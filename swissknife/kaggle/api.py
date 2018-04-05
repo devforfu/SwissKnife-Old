@@ -1,5 +1,4 @@
 import time
-import tempfile
 from io import StringIO
 from subprocess import Popen, PIPE
 
