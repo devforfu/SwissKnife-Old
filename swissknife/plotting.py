@@ -2,6 +2,7 @@
 A group of utilities to help with plots styling and drawing various kinds of
 curves helpful in models training.
 """
+from textwrap import wrap
 from operator import itemgetter
 
 import numpy as np
@@ -10,7 +11,8 @@ import matplotlib.pyplot as plt
 
 def plot_predictions(image, predictions, best_color='darkorange',
                      other_colors='royalblue', sort_by_probability=False,
-                     edge_color='white', alpha=0.8, title=None, **plot_params):
+                     edge_color='white', alpha=0.8, title=None,
+                     ax=None, **plot_params):
 
     if not plot_params:
         plot_params['figsize'] = (10, 8)
@@ -20,7 +22,7 @@ def plot_predictions(image, predictions, best_color='darkorange',
 
     sort_key = 1 if sort_by_probability else 0
     labels, values = zip(
-        *sorted(predictions.items(), key=itemgetter(sort_key)))
+        *sorted(predictions.items(), key=itemgetter(sort_key), reverse=True))
     n = len(labels)
     colors = [other_colors] * n
     max_index = np.argmax(values)
@@ -35,16 +37,21 @@ def plot_predictions(image, predictions, best_color='darkorange',
     bar_height = 0.5 * h / n
     extent = [0, w, 0, h]
 
-    f, ax = plt.subplots(1, 1, **plot_params)
+    if ax is None:
+        f, ax = plt.subplots(1, 1, **plot_params)
+
     y_pos = [(i + 1)*h/(n + 1) for i in np.arange(n)]
     ax.barh(y_pos, scaled_values, height=bar_height,
             edgecolor=edge_color, align='center', color=colors, alpha=alpha)
+
+    labels = ['\n'.join(wrap(label, width=15)) for label in labels]
     ax.set_yticks(y_pos)
-    ax.set_yticklabels(labels)
+    ax.set_yticklabels(labels, fontsize=18)
     ax.set_xticks([])
     ax.set_xticklabels([])
     ax.invert_yaxis()
     ax.imshow(image, zorder=0, extent=extent)
     if title is not None:
         ax.set_title(title)
-    return f
+
+    return ax
