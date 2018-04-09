@@ -12,7 +12,8 @@ import matplotlib.pyplot as plt
 def plot_predictions(image, predictions, best_color='darkorange',
                      other_colors='royalblue', sort_by_probability=False,
                      edge_color='white', alpha=0.8, title=None,
-                     ax=None, **plot_params):
+                     wrap_text=None, labels_font_size=18, ax=None,
+                     **plot_params):
 
     if not plot_params:
         plot_params['figsize'] = (10, 8)
@@ -44,9 +45,11 @@ def plot_predictions(image, predictions, best_color='darkorange',
     ax.barh(y_pos, scaled_values, height=bar_height,
             edgecolor=edge_color, align='center', color=colors, alpha=alpha)
 
-    labels = ['\n'.join(wrap(label, width=15)) for label in labels]
+    if wrap_text is not None:
+        labels = ['\n'.join(wrap(label, width=wrap_text)) for label in labels]
+
     ax.set_yticks(y_pos)
-    ax.set_yticklabels(labels, fontsize=18)
+    ax.set_yticklabels(labels, fontsize=labels_font_size)
     ax.set_xticks([])
     ax.set_xticklabels([])
     ax.invert_yaxis()
