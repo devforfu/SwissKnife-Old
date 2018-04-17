@@ -8,6 +8,7 @@ import numpy as np
 from sklearn.utils import column_or_1d
 from sklearn.preprocessing import LabelBinarizer
 
+from ..utils import strip_exts
 from ..images import FilesStream, FallbackImageLoader
 
 
@@ -56,6 +57,7 @@ class KaggleClassifiedImagesSource:
     def __init__(self,
                  labels_path: str,
                  label_column: str,
+                 id_column: str='id',
                  load_image=None):
 
         if load_image is None:
@@ -67,7 +69,10 @@ class KaggleClassifiedImagesSource:
         self.binarizer = None
         self.name_to_label = None
         self.identifier_to_label = None
-        classes = self.read_labels(labels_path, label_column=label_column)
+        classes = self.read_labels(
+            filename=labels_path,
+            label_column=label_column,
+            id_column=id_column)
         self.build(classes)
 
     def __call__(self, *args, **kwargs):
@@ -96,7 +101,9 @@ class KaggleClassifiedImagesSource:
         with open(filename) as fp:
             reader = csv.DictReader(fp)
             try:
-                labels = {row[id_column]: row[label_column] for row in reader}
+                labels = {
+                    strip_exts(row[id_column]):
+                    row[label_column] for row in reader}
             except KeyError:
                 raise ValueError(
                     "please check your CSV file: '%s' and/or '%s' "

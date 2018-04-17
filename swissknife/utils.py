@@ -308,3 +308,22 @@ class BatchGenerator:
                     yield [list(x) for x in zip(*batches)]
                 else:
                     yield batches
+
+
+def strip_exts(filename, exts=None, strip_all=True):
+    """Removes specific extensions from file name."""
+
+    if filename.startswith('.'):
+        return filename
+
+    if strip_all and exts is None:
+        basename, *_ = filename.split('.')
+        return basename
+
+    elif not strip_all and exts is None:
+        return filename
+
+    list_of_extensions = exts.split('|') if '|' in exts else [exts]
+    for ext in list_of_extensions:
+        filename = filename.replace('.%s' % ext, '')
+    return filename
