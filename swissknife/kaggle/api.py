@@ -30,8 +30,7 @@ class ClassifierSubmission:
         fmt = self.floats_format
 
         for identifier, probabilities in predictions.items():
-            row = [identifier] + [fmt % p for p in probabilities]
-            rows.append(row)
+            rows.append([identifier] + [fmt % p for p in probabilities])
 
         strings = [','.join(row) + '\n' for row in rows]
         if isinstance(output, str):
@@ -111,4 +110,3 @@ class ClassifierSubmission:
 
         ok = process.returncode == 0
         return ok, command_output
-

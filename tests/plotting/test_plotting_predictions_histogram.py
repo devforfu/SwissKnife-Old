@@ -2,7 +2,7 @@ import pytest
 import matplotlib
 matplotlib.use('Agg')
 
-from swissknife.plotting import plot_predictions
+from swissknife.plotting import plot_predictions  # NOQA
 
 
 @pytest.mark.parametrize('params', [
@@ -20,6 +20,7 @@ def test_plotting_predictions_histogram(params, dog_image, request):
         'elephant': 0.001
     }
 
-    figure = plot_predictions(dog_image, predictions, **params)
+    ax = plot_predictions(dog_image, predictions, **params)
 
+    figure = ax.get_figure()
     figure.savefig('%s.png' % request.node.name)

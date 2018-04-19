@@ -58,6 +58,7 @@ class KaggleClassifiedImagesSource:
                  labels_path: str,
                  label_column: str,
                  id_column: str='id',
+                 classes=None,
                  load_image=None):
 
         if load_image is None:
@@ -69,10 +70,13 @@ class KaggleClassifiedImagesSource:
         self.binarizer = None
         self.name_to_label = None
         self.identifier_to_label = None
-        classes = self.read_labels(
-            filename=labels_path,
-            label_column=label_column,
-            id_column=id_column)
+
+        if classes is None:
+            classes = self.read_labels(
+                filename=labels_path,
+                class_column=label_column,
+                id_column=id_column)
+
         self.build(classes)
 
     def __call__(self, *args, **kwargs):
@@ -84,13 +88,13 @@ class KaggleClassifiedImagesSource:
         return len(self.binarizer.classes_)
 
     @staticmethod
-    def read_labels(filename: str, label_column: str, id_column: str='id'):
+    def read_labels(filename: str, class_column: str, id_column: str='id'):
         """Reads file with class labels.
 
         Args:
             filename: Path to file with labels.
             id_column: Column with unique image identifier.
-            label_column: Column with verbose classes names.
+            class_column: Column with verbose classes names.
 
         Returns:
             labels: The mapping from ID to verbose label.
@@ -103,11 +107,11 @@ class KaggleClassifiedImagesSource:
             try:
                 labels = {
                     strip_exts(row[id_column]):
-                    row[label_column] for row in reader}
+                    row[class_column] for row in reader}
             except KeyError:
                 raise ValueError(
                     "please check your CSV file: '%s' and/or '%s' "
-                    "column was not found" % (id_column, label_column))
+                    "column was not found" % (id_column, class_column))
             else:
                 return labels
 
@@ -189,6 +193,9 @@ class KaggleClassifiedImagesSource:
         """
         return TrainingSamplesIterator(
             self, folder, target_size, batch_size, infinite)
+
+
+read_labels = KaggleClassifiedImagesSource.read_labels
 
 
 class TrainingSamplesIterator:

@@ -42,8 +42,8 @@ def gather_files(src: str,
         exts: Pipe-separated string with extensions.
         rewrite: If True and output directory contains files, then it will
             be rewritten.
-        delete_source: If True, then ALL files from the original tree will
-            be deleted.
+        delete_source: If True, then ALL files from the original tree
+            will be deleted.
 
     Returns:
         copied_files: List of copied files.
@@ -57,11 +57,9 @@ def gather_files(src: str,
         ext_list = exts.split('|')
 
     if dst.exists():
-        for _ in dst.iterdir():
-            if not rewrite:
-                raise OSError('folder exists: %s' % dst)
-            break
-        shutil.rmtree(dst.as_posix())
+        has_entries = bool(list(dst.iterdir()))
+        if has_entries and rewrite:
+            shutil.rmtree(dst.as_posix())
 
     copied_files = []
     for old_path in src.glob('**/*.*'):
@@ -89,6 +87,7 @@ def split_dataset_files(dataset_dir: str,
                         holdout_size=None,
                         rewrite: bool=False,
                         extensions: str='jpg|jpeg|png',
+                        delete_source: bool=False,
                         random_state: int=None):
     """
     Separates training files into training and validation folders.
@@ -107,6 +106,8 @@ def split_dataset_files(dataset_dir: str,
         rewrite: If True, then previously organized files will be rewritten.
             Otherwise, the file will be ignored.
         extensions: File extensions considered when gathering files.
+        delete_source: If True, then ALL files from the original tree
+            will be deleted.
         random_state: Random state for sklearn.StratifiedShuffleSplit object
             which is used to split files into train/validation/test subsets.
 
@@ -133,6 +134,7 @@ def split_dataset_files(dataset_dir: str,
 
     dataset_dir = Path(dataset_dir)
     output_dir = Path(output_dir)
+
     filepaths = np.array([
         Path(path)
         for path in gather_files(
@@ -140,7 +142,7 @@ def split_dataset_files(dataset_dir: str,
             dst=output_dir,
             exts=extensions,
             rewrite=rewrite,
-            delete_source=False)])
+            delete_source=delete_source)])
 
     split = StratifiedShuffleSplit(n_splits=1, random_state=random_state)
     uids = [filename.stem for filename in filepaths]
@@ -180,7 +182,8 @@ def _split_into_folders(folders, output_dir, rewrite):
 
     for paths, folder_name in folders:
         folder = output_dir.joinpath(folder_name)
-        folder.mkdir()
+        if not folder.exists():
+            folder.mkdir()
 
         for old_path in paths:
             new_path = folder.joinpath(old_path.name)

@@ -77,7 +77,6 @@ def get_logger(name='main',
         else:
             return config_string
 
-
     def parse_yaml(string):
         """Parse YAML configuration from string."""
 
@@ -89,7 +88,6 @@ def get_logger(name='main',
                 'yaml package is not installed')
         else:
             return yaml.load(StringIO(string))
-
 
     with open(config_file) as fp:
         raw_content = fp.read()

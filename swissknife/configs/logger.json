@@ -27,7 +27,8 @@
     "notebook": {
       "class": "logging.StreamHandler",
       "formatter": "minimal",
-      "level": "$console_level"
+      "level": "$console_level",
+      "stream": "ext://sys.stdout"
     },
     "file": {
       "class": "logging.FileHandler",
