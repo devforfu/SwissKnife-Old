@@ -3,13 +3,14 @@ Datasets loading and processing.
 """
 import csv
 from pathlib import Path
+from collections import Counter
 
 import numpy as np
 from sklearn.utils import column_or_1d
 from sklearn.preprocessing import LabelBinarizer
 
-from ..utils import strip_exts
 from ..images import FilesStream, FallbackImageLoader
+from ..utils import strip_exts, every_is_none, adjacent_pairs
 
 
 class KaggleClassifiedImagesSource:
@@ -55,14 +56,19 @@ class KaggleClassifiedImagesSource:
 
     """
     def __init__(self,
-                 labels_path: str,
-                 label_column: str,
-                 id_column: str='id',
+                 labels_path: str=None,
+                 label_column: str=None,
                  classes=None,
+                 id_column: str='id',
                  load_image=None):
 
         if load_image is None:
             load_image = FallbackImageLoader()
+
+        if every_is_none(labels_path, label_column, classes):
+            raise ValueError(
+                "need to provide 'labels_path' and 'label_column' OR "
+                "'classes' dictionary to initialize class.")
 
         self.labels_path = labels_path
         self.label_column = label_column
@@ -70,6 +76,8 @@ class KaggleClassifiedImagesSource:
         self.binarizer = None
         self.name_to_label = None
         self.identifier_to_label = None
+        self.classes_counts = None
+        self.classes = None
 
         if classes is None:
             classes = self.read_labels(
@@ -116,12 +124,13 @@ class KaggleClassifiedImagesSource:
                 return labels
 
     def build(self, classes: dict):
-        """Fits labels one-hot encoder and maps verbose image classes labels
-        onto one-hot encoded vectors.
+        """Fits labels one-hot encoder and creates a group of mapping to
+        convert one label representation into another.
 
         Args:
-            classes: A dictionary with classes. Should be a mapping from file
-                ID to string with class name.
+            classes: A dictionary with dataset classes:
+                * key: Image ID (usually filename without extension)
+                * value: class verbose label (i.e. 'dog', 'car', etc.)
 
         """
         identifiers = [Path(path).stem for path in classes.keys()]
@@ -135,20 +144,36 @@ class KaggleClassifiedImagesSource:
         identifier_to_label = {
             uid: name_to_label[classes[uid]] for uid in identifiers}
 
+        self.classes = classes
         self.binarizer = binarizer
         self.name_to_label = name_to_label
         self.identifier_to_label = identifier_to_label
+        self.classes_counts = Counter(list(classes.values()))
 
-    def get_class_name(self, image_path) -> str:
-        """Returns class represented by image using file name as unique ID."""
+    def frequency_histogram(self, bins=None, with_labels=True):
+        """Creates a list of histogram bins with classes frequencies."""
 
-        uid = Path(image_path).stem
-        if uid not in self.identifier_to_label:
-            raise ValueError('The file with ID \'%s\' is not present in '
-                             'mapping. Probably it was taken from different '
-                             'dataset or file with labels which was used to '
-                             'build mapping is incomplete.')
-        return self.identifier_to_label[uid]
+        counts = list(self.classes_counts.values())
+        values, splits = np.histogram(counts, bins=bins)
+        bin_ranges, bin_labels = [], []
+        for pair in adjacent_pairs(splits):
+            bin_ranges.append(pair)
+            bin_labels.append('[%s, %s)' % pair)
+        ticks = [i for i, _ in enumerate(values)]
+        result = ticks, values, bin_ranges
+        if with_labels:
+            result += (bin_labels,)
+        return result
+
+    def class_name_from_file(self, image_path) -> str:
+        """Returns class of image from its path."""
+
+        return self._convert(image_path, self.classes)
+
+    def one_hot_from_file(self, image_path) -> str:
+        """Returns one-hot encoded label of image from its path."""
+
+        return self._convert(image_path, self.identifier_to_label)
 
     def one_hot_to_verbose(self, vec) -> str:
         """Converts one-hot encoded vector into verbose class name."""
@@ -167,10 +192,14 @@ class KaggleClassifiedImagesSource:
         return self.binarizer.classes_[vec.argmax()]
 
     def integer_to_verbose(self, label: int) -> str:
-        """Converts class represented with integer label into verbose class
-        name.
-        """
+        """Converts numerical class representation into verbose name."""
+
         return self.binarizer.classes_[label]
+
+    def integer_to_one_hot(self, label: int):
+        """Converts numerical class representation into one-hot vector."""
+
+        return self.name_to_label[label]
 
     def flow(self, folder: str, target_size: tuple, batch_size: int,
              infinite: bool=False):
@@ -193,6 +222,16 @@ class KaggleClassifiedImagesSource:
         """
         return TrainingSamplesIterator(
             self, folder, target_size, batch_size, infinite)
+
+    @staticmethod
+    def _convert(filename, mapping):
+        uid = Path(filename).stem
+        if uid not in mapping:
+            raise ValueError('The file with ID \'%s\' is not present in '
+                             'mapping. Probably it was taken from different '
+                             'dataset or file with labels which was used to '
+                             'build mapping is incomplete.')
+        return mapping[uid]
 
 
 read_labels = KaggleClassifiedImagesSource.read_labels

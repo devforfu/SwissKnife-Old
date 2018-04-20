@@ -330,3 +330,30 @@ def strip_exts(filename, exts=None, strip_all=True):
     for ext in list_of_extensions:
         filename = filename.replace('.%s' % ext, '')
     return filename
+
+
+def every_is_none(item, *items):
+    """Returns True if all elements in sequence are equal to None."""
+
+    seq = [item] + list(items)
+    for item in seq:
+        if item is not None:
+            return False
+    return True
+
+
+def adjacent_pairs(seq):
+    """Splits list of elements into list of adjacent pairs.
+
+    Example:
+    >>> for pair in adjacent_pairs([1, 2, 3, 4, 5]):
+    ...     print(pair, end=' ')
+    (1, 2) (3, 4), (4, 5)
+    """
+    seq = iter(seq)
+    first, second = next(seq), next(seq)
+
+    while True:
+        yield (first, second)
+        first = second
+        second = next(seq)

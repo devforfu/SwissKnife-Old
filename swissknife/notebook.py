@@ -15,10 +15,10 @@ def format_list(seq):
     return ', '.join(list(map(str, seq)))
 
 
-def print_list(prompt, seq, newline=True):
+def print_list(seq, prompt='', newline=True):
     """Prints sequence into standard output."""
 
-    print(prompt, format_list(seq))
+    print('%s%s' % (prompt, format_list(seq)))
     if newline:
         print()
 
