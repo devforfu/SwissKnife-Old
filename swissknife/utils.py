@@ -2,10 +2,12 @@
 Miscellaneous tools to manage dataset files and prepare data for training.
 """
 import math
+import time
 import shutil
 import fnmatch
 from pathlib import Path
 from itertools import islice
+from timeit import default_timer
 from collections import defaultdict
 
 import numpy as np
@@ -357,3 +359,34 @@ def adjacent_pairs(seq):
         yield (first, second)
         first = second
         second = next(seq)
+
+
+class Timer:
+    """Simple util to measure execution time.
+
+    Examples
+    --------
+    >>> import time
+    >>> with Timer() as timer:
+    ...     time.sleep(1)
+    >>> print(timer)
+    00:00:01
+    """
+    def __init__(self):
+        self.start = None
+        self.elapsed = None
+
+    def __enter__(self):
+        self.start = default_timer()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.elapsed = default_timer() - self.start
+
+    def __str__(self):
+        return self.verbose()
+
+    def verbose(self):
+        if self.elapsed is None:
+            return '<not-measured>'
+        return time.strftime('%H:%M:%S', time.gmtime(self.elapsed))

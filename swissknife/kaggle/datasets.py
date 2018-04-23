@@ -267,7 +267,8 @@ class TrainingSamplesIterator:
         arrays = np.asarray([
             delegate.load_image(path, target_size=self.target_size)
             for path in paths])
-        targets = np.asarray([delegate.get_class_name(path) for path in paths])
+        targets = np.asarray([
+            delegate.class_name_from_file(path) for path in paths])
         return arrays, targets
 
 
