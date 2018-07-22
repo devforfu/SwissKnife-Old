@@ -368,7 +368,8 @@ def glob(folder, extensions):
             yield path.as_posix()
 
 
-def read_labels(filename: str, class_column: str, id_column: str='id'):
+def read_labels(filename: str, class_column: str, id_column: str='id',
+                skip_header: bool=True):
     """Reads CSV file with labels.
 
     The file should have at least two columns: the one with unique identifiers
@@ -378,16 +379,21 @@ def read_labels(filename: str, class_column: str, id_column: str='id'):
         filename: Path to file with labels.
         class_column: Column with class names.
         id_column: Column with unique identifiers.
+        skip_header: If True, then the first row in the file is ignored.
 
     Returns:
         labels: The mapping from ID to verbose label.
 
     """
-    if not Path(filename).exists():
+    path = Path(str(filename))
+
+    if not path.exists():
         raise ValueError('labels file is not found: %s' % filename)
 
-    with open(filename) as file:
-        reader = csv.DictReader(file)
+    with open(path.as_posix()) as file:
+        reader = csv.DictReader(file, fieldnames=[id_column, class_column])
+        if skip_header:
+            _ = next(reader)
         try:
             labels = {
                 strip_exts(row[id_column]): row[class_column]
