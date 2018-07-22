@@ -1,13 +1,14 @@
 """
 Miscellaneous tools to manage dataset files and prepare data for training.
 """
+import csv
 import math
 import time
 import shutil
 import fnmatch
 from pathlib import Path
+from itertools import islice
 from timeit import default_timer
-from itertools import islice, chain
 from collections import defaultdict
 
 import numpy as np
@@ -365,6 +366,38 @@ def glob(folder, extensions):
     for ext in extensions:
         for path in Path(folder).glob('*.' + ext):
             yield path.as_posix()
+
+
+def read_labels(filename: str, class_column: str, id_column: str='id'):
+    """Reads CSV file with labels.
+
+    The file should have at least two columns: the one with unique identifiers
+    and the another one - with class names.
+
+    Args:
+        filename: Path to file with labels.
+        class_column: Column with class names.
+        id_column: Column with unique identifiers.
+
+    Returns:
+        labels: The mapping from ID to verbose label.
+
+    """
+    if not Path(filename).exists():
+        raise ValueError('labels file is not found: %s' % filename)
+
+    with open(filename) as file:
+        reader = csv.DictReader(file)
+        try:
+            labels = {
+                strip_exts(row[id_column]): row[class_column]
+                for row in reader}
+        except KeyError:
+            raise ValueError(
+                'please check your CSV file to make sure that \'%s\' and '
+                '\'%s\' columns exist' % (id_column, class_column))
+        else:
+            return labels
 
 
 class Timer:

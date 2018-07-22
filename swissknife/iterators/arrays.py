@@ -19,8 +19,8 @@ class BatchArrayIterator(IteratorMixin):
             the total length of the iterated array is not evenly divided by the
             `batch_size`. If the last batch is smaller then `batch_size`, it is
             discarded.
-    """
 
+    """
     def __init__(self,
                  array, *arrays,
                  batch_size: int=32,
