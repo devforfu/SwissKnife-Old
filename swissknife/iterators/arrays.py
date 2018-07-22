@@ -33,8 +33,7 @@ class BatchArrayIterator:
 
     @property
     def n_batches(self) -> int:
-        """
-        Returns total number of batches required to iterate all elements of
+        """Returns total number of batches required to iterate all elements of
         the array.
         """
         return self._n

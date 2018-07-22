@@ -7,10 +7,13 @@ from swissknife.iterators.arrays import BatchArrayIterator
 
 
 def test_batch_iterator_has_required_properties():
+    """Tests the iterator object has all required public properties."""
+
     iterator = BatchArrayIterator(np.zeros(32))
 
     assert not iterator.infinite
     assert not iterator.same_size_batches
+    assert iterator.n_batches == 1
     assert iterator.batch_size == 32
 
 
@@ -20,9 +23,10 @@ def test_batch_iterator_has_required_properties():
     (100, 32),
     (1000, 10)
 ])
-def test_finite_batch_iterator_yields_valid_number_of_batches(
+def test_finite_batch_iterator_yields_expected_number_of_batches(
         array_size,
         batch_size):
+    """Tests that the iterator yields an expected number of batches."""
 
     arr = np.zeros(array_size)
     expected = ceil(array_size / batch_size)
@@ -64,7 +68,10 @@ def test_finite_batch_iterator_generates_non_even_batch_sizes(
 def test_infinite_batch_iterator_indefinitely_yields_batches(
         array_size,
         batch_size):
-
+    """
+    Tests that the iterator with infinite=True yields unbounded number of
+    iterations.
+    """
     arr = np.zeros(array_size)
 
     iterator = BatchArrayIterator(
@@ -76,6 +83,10 @@ def test_infinite_batch_iterator_indefinitely_yields_batches(
 
 
 def test_infinite_batch_iterator_yields_same_size_batches():
+    """
+    Tests that the iterator with infinite=True and same_size_batches=True
+    generates unlimited number of batches with the same size.
+    """
     iterator = BatchArrayIterator(
         np.zeros(10),
         batch_size=8,
