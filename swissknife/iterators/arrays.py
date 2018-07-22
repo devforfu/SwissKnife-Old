@@ -3,10 +3,22 @@ from itertools import cycle
 
 import numpy as np
 
+from . import IteratorMixin
 
-class BatchArrayIterator:
-    """
 
+class BatchArrayIterator(IteratorMixin):
+    """Iterates an array or several arrays in smaller batches.
+
+    Attributes:
+        batch_size: Size of batch.
+        infinite: If True, then the iterator doesn't raise StopIteration
+            exception when the array is completely traversed but restarts the
+            process again.
+        same_size_batches: If True and `infinite` attribute is True, then all
+            the batches yielded by the iterator have the same size even if
+            the total length of the iterated array is not evenly divided by the
+            `batch_size`. If the last batch is smaller then `batch_size`, it is
+            discarded.
     """
 
     def __init__(self,
@@ -30,20 +42,6 @@ class BatchArrayIterator:
         self._n = _num_of_batches(arrays, batch_size, same_size_batches)
         self._batch_index = 0
         self._epoch_index = 0
-
-    @property
-    def n_batches(self) -> int:
-        """Returns total number of batches required to iterate all elements of
-        the array.
-        """
-        return self._n
-
-    def __iter__(self):
-        self._batch_index = 0
-        return self
-
-    def __next__(self):
-        return self.next()
 
     def next(self):
         if self._batch_index >= self._n:

@@ -6,8 +6,8 @@ import time
 import shutil
 import fnmatch
 from pathlib import Path
-from itertools import islice
 from timeit import default_timer
+from itertools import islice, chain
 from collections import defaultdict
 
 import numpy as np
@@ -359,6 +359,12 @@ def adjacent_pairs(seq):
         yield (first, second)
         first = second
         second = next(seq)
+
+
+def glob(folder, extensions):
+    for ext in extensions:
+        for path in Path(folder).glob('*.' + ext):
+            yield path.as_posix()
 
 
 class Timer:
